@@ -5,6 +5,7 @@ import ma.enset.orderservice.dtos.OrderItemRequest;
 import ma.enset.orderservice.dtos.OrderRequest;
 import ma.enset.orderservice.dtos.OrderResponse;
 import ma.enset.orderservice.entities.Order;
+import ma.enset.orderservice.entities.OrderItem;
 import ma.enset.orderservice.entities.OrderStatus;
 import ma.enset.orderservice.feign.ProductClient;
 import ma.enset.orderservice.mappers.OrderMapper;
@@ -13,15 +14,16 @@ import ma.enset.orderservice.repository.OrderRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Validated
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -30,17 +32,24 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse createOrder(OrderRequest request, String userId) {
+        // validate items (now handled by bean validation but keep guard)
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order must contain at least one item");
         }
 
-        List<Product> items = new ArrayList<>();
+        Order order = Order.builder()
+                .orderDate(LocalDateTime.now())
+                .status(OrderStatus.PENDING)
+                .userId(userId)
+                .build();
+
         double total = 0d;
 
         for (OrderItemRequest itemReq : request.getItems()) {
             if (itemReq.getQuantity() <= 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be positive");
             }
+
             Product product = productClient.getProduct(itemReq.getProductId());
             if (product == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + itemReq.getProductId());
@@ -48,25 +57,21 @@ public class OrderServiceImpl implements OrderService {
             if (product.getQuantity() < itemReq.getQuantity()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient stock for product " + product.getId());
             }
-            total += product.getPrice() * itemReq.getQuantity();
 
-            Product ordered = Product.builder()
-                    .id(product.getId())
-                    .name(product.getName())
-                    .description(product.getDescription())
-                    .price(product.getPrice())
+            double lineTotal = product.getPrice() * itemReq.getQuantity();
+            total += lineTotal;
+
+            OrderItem orderItem = OrderItem.builder()
+                    .productId(product.getId())
                     .quantity(itemReq.getQuantity())
+                    .unitPrice(product.getPrice())
+                    .lineTotal(lineTotal)
                     .build();
-            items.add(ordered);
+
+            order.addItem(orderItem);
         }
 
-        Order order = Order.builder()
-                .orderDate(LocalDateTime.now())
-                .status(OrderStatus.PENDING)
-                .totalAmount(total)
-                .userId(userId)
-                .items(items)
-                .build();
+        order.setTotalAmount(total);
 
         Order saved = orderRepository.save(order);
         return orderMapper.toResponse(saved);

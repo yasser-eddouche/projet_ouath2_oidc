@@ -1,5 +1,6 @@
 package ma.enset.orderservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ma.enset.orderservice.dtos.OrderRequest;
 import ma.enset.orderservice.dtos.OrderResponse;
@@ -30,7 +31,7 @@ public class OrderController {
     @PostMapping
     @PreAuthorize("hasAuthority('SCOPE_CLIENT') or hasAuthority('SCOPE_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse createOrder(@RequestBody OrderRequest request, Authentication authentication) {
+    public OrderResponse createOrder(@RequestBody @Valid OrderRequest request, Authentication authentication) {
         String userId = getUserId(authentication);
         return orderService.createOrder(request, userId);
     }

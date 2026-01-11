@@ -2,7 +2,6 @@ package ma.enset.orderservice.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ma.enset.orderservice.models.Product;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,7 +27,15 @@ public class Order {
 
     private String userId;
 
-    @ElementCollection
-    @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
-    private List<Product> items = new ArrayList<>();
+    @Builder.Default
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items = new ArrayList<>();
+
+    public void addItem(OrderItem item) {
+        if (items == null) {
+            items = new ArrayList<>();
+        }
+        item.setOrder(this);
+        this.items.add(item);
+    }
 }

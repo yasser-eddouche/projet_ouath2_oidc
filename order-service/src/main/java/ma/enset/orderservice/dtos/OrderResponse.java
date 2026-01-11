@@ -2,7 +2,6 @@ package ma.enset.orderservice.dtos;
 
 import lombok.Builder;
 import lombok.Data;
-import ma.enset.orderservice.models.Product;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,5 +13,5 @@ public class OrderResponse {
     private LocalDateTime orderDate;
     private String status;
     private double totalAmount;
-    private List<Product> items;
+    private List<OrderItemResponse> items;
 }

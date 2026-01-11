@@ -55,6 +55,11 @@ public class ProductServiceImpl implements ProductService {
         if (!productRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
         }
-        productRepository.deleteById(id);
+        try {
+            productRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, 
+                "Cannot delete product. It may be referenced in existing orders.");
+        }
     }
 }

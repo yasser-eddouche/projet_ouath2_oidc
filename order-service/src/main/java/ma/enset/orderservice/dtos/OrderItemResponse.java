@@ -11,4 +11,3 @@ public class OrderItemResponse {
     private double unitPrice;
     private double lineTotal;
 }
-

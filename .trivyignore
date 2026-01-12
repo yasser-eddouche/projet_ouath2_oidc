@@ -1,0 +1,17 @@
+# Trivy Ignore File
+#
+# Vulnerabilities listed here will be ignored during Trivy scans
+# Each entry should include:
+# - CVE ID
+# - Reason for ignoring
+# - Expected resolution date
+
+# Example:
+# CVE-2023-XXXXX - False positive, does not affect our configuration
+# Expiry: 2026-12-31
+
+# Known false positives in base images
+# CVE-2024-XXXXX - Alpine base image, patched in our deployment
+
+# Development dependencies only
+# CVE-2023-XXXXX - Only affects test dependencies, not in production

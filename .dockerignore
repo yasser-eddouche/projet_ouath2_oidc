@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# IDEs
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Build outputs (allow target/*.jar for Docker builds)
+# target/
+build/
+dist/
+out/
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+.turbo/
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test
+coverage/
+test-results/

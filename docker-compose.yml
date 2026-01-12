@@ -9,7 +9,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"  # Changed to avoid conflict
+      - "5433:5432"
     restart: always
 
   keycloak:
@@ -22,12 +22,159 @@ services:
       KC_DB_PASSWORD: changeme
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_URL: http://localhost:8090
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8090
     command: ["start-dev"]
     ports:
-      - "8090:8080"  # Changed to avoid conflict with services
+      - "8090:8080"
     depends_on:
       - postgres
     restart: always
 
+  postgres-product:
+    image: postgres:16
+    container_name: product_db
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product123
+    volumes:
+      - postgres_product_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    restart: always
+
+  postgres-order:
+    image: postgres:16
+    container_name: order_db
+    environment:
+      POSTGRES_DB: orderdb
+      POSTGRES_USER: order
+      POSTGRES_PASSWORD: order123
+    volumes:
+      - postgres_order_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    restart: always
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    volumes:
+      - ./discovery-service/src/main/resources/application.properties:/app/application.properties
+    restart: always
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./gateway-service/src/main/resources/application.yml:/app/application.yml
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://host.docker.internal:8090/realms/microservices-realm/protocol/openid-connect/certs
+    depends_on:
+      - discovery-service
+      - keycloak
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  config-service:
+    build:
+      context: ./config-service
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./config-service/src/main/resources/application.properties:/app/application.properties
+      - ./config-repo:/config-repo
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:///config-repo
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka
+    depends_on:
+      - discovery-service
+    restart: always
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./product-service/src/main/resources/application.properties:/app/application.properties
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:9999
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://host.docker.internal:8090/realms/microservices-realm/protocol/openid-connect/certs
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-product:5432/productdb
+      - SPRING_DATASOURCE_USERNAME=product
+      - SPRING_DATASOURCE_PASSWORD=product123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - config-service
+      - discovery-service
+      - keycloak
+      - postgres-product
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./order-service/src/main/resources/application.properties:/app/application.properties
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:9999
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://host.docker.internal:8090/realms/microservices-realm/protocol/openid-connect/certs
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5432/orderdb
+      - SPRING_DATASOURCE_USERNAME=order
+      - SPRING_DATASOURCE_PASSWORD=order123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - config-service
+      - discovery-service
+      - keycloak
+      - postgres-order
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8090
+      - NEXT_PUBLIC_KEYCLOAK_REALM=microservices-realm
+      - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=microservices-app
+      - NEXT_PUBLIC_API_URL=http://localhost:8888
+    depends_on:
+      - gateway-service
+      - keycloak
+    restart: always
+
 volumes:
   postgres_data:
+  postgres_product_data:
+  postgres_order_data:

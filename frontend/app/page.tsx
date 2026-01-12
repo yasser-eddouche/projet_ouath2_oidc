@@ -18,14 +18,14 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
         <div className="text-2xl font-semibold text-gray-700">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
       <main className="flex flex-col items-center gap-8 p-16 bg-white rounded-2xl shadow-2xl max-w-md w-full">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-gray-900">

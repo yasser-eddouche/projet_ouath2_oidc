@@ -12,6 +12,11 @@ env:
   JAVA_VERSION: "21"
   NODE_VERSION: "20"
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
 jobs:
   # Job 1: Build and Test
   build:
@@ -333,16 +338,16 @@ jobs:
           echo "## Scan Date: $(date)" >> security-summary.md
           echo "" >> security-summary.md
           echo "### CodeQL Analysis" >> security-summary.md
-          echo "✅ Static code analysis completed" >> security-summary.md
+          echo "Static code analysis completed" >> security-summary.md
           echo "" >> security-summary.md
           echo "### ESLint Analysis" >> security-summary.md
-          echo "✅ Frontend code quality scan completed" >> security-summary.md
+          echo "Frontend code quality scan completed" >> security-summary.md
           echo "" >> security-summary.md
           echo "### OWASP Dependency Check" >> security-summary.md
-          echo "✅ Dependency vulnerability scan completed" >> security-summary.md
+          echo "Dependency vulnerability scan completed" >> security-summary.md
           echo "" >> security-summary.md
           echo "### Trivy Container Scan" >> security-summary.md
-          echo "✅ Container image security scan completed" >> security-summary.md
+          echo "Container image security scan completed" >> security-summary.md
           echo "" >> security-summary.md
           echo "Please review the detailed reports in the artifacts." >> security-summary.md
 

@@ -5,8 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  schedule:
-    - cron: "0 2 * * 1" # Weekly scan on Monday at 2 AM
+  # schedule:
+   # - cron: "0 2 * * 1" # Weekly scan on Monday at 2 AM
 
 env:
   JAVA_VERSION: "21"
